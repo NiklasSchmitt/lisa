@@ -1,11 +1,9 @@
 #define OCMD_BEFORE_CALLBACK 1
-
+#define FILTERSCRIPT
 #include <a_samp>
 #include <a_mysql>
 #include <ocmd>
 #include <sscanf2>
-
-#define FILTERSCRIPT
 
 #define MYSQL_HOST "127.0.0.1"
 #define MYSQL_USER "root"
@@ -124,7 +122,21 @@ main () {
 	print("----------------------------------\n");
 }
 
+public OnFilterScriptInit () {
+	// Enable/Disable some samp-functions
+	EnableStuntBonusForAll(0);
+	ShowPlayerMarkers(PLAYER_MARKERS_MODE_OFF);
+	ShowNameTags(1);
 
+	MySQL_SetupConnection();
+	mysql_log(ALL);
+
+	mysql_pquery(handle, "SELECT * FROM pickups ORDER BY id ASC", "LoadPickUps");
+	mysql_pquery(handle, "SELECT * FROM objects ORDER BY id ASC", "LoadObjects");
+	mysql_pquery(handle, "SELECT * FROM vehicles ORDER BY id ASC", "LoadVehicles");
+
+	return 1;
+}
 
 public OnFilterScriptExit() {
 	mysql_close();
@@ -312,24 +324,6 @@ public OnPlayerClickPlayer (playerid, clickedplayerid, source) {
 // ADDITIONAL FUNCTIONS //
 //////////////////////////
 
-forward BeforePlayerCommandText (playerid, cmdtext[]);
-public BeforePlayerCommandText (playerid, cmdtext[]) {
-	new text[256];
-	sscanf(cmdtext, "s", text);
-
-	if (!PlayerInfo[playerid][loggedIn]) {
-		SendClientMessage(playerid, -1, "Du bist nicht eingeloggt!");
-		return 0;
-	}
-
-	if (PlayerInfo[playerid][level] < 1 || PlayerInfo[playerid][level] > 3) {
-		SendClientMessage(playerid, -1, "Du darfst das nicht!");
-		return 0;
-	}
-
-	return 1;
-}
-
 forward IsPlayerInRangeOfVehicle(playerid, vehicleid, Float:range);
 public IsPlayerInRangeOfVehicle(playerid, vehicleid, Float:range) {
 	new Float:v_Pos[3];
@@ -394,6 +388,79 @@ stock SaveUserHealth (playerid) {
 
 	return 1;
 }
+
+//////////
+// LOAD //
+//////////
+
+forward LoadPickUps ();
+public LoadPickUps () {
+	new rows;
+	cache_get_row_count(rows);
+
+	for (new i = 0; i < rows; i++) {
+		cache_get_value_name_int(i, "id", PickUps[i][id]);
+		cache_get_value_name_int(i, "model", PickUps[i][model]);
+		cache_get_value_name_int(i, "type", PickUps[i][type]);
+		cache_get_value_name_int(i, "world", PickUps[i][world]);
+		cache_get_value_name_float(i, "pos_x", PickUps[i][pos_x]);
+		cache_get_value_name_float(i, "pos_y", PickUps[i][pos_y]);
+		cache_get_value_name_float(i, "pos_z", PickUps[i][pos_z]);
+		cache_get_value_name(i, "description", PickUps[i][description],256);
+		cache_get_value_name_int(i, "company", PickUps[i][company]);
+
+		PickUps[i][internal] = CreatePickup(PickUps[i][model],PickUps[i][type],PickUps[i][pos_x],PickUps[i][pos_y],PickUps[i][pos_z],PickUps[i][world]);
+	}
+	return 1;
+}
+
+forward LoadObjects ();
+public LoadObjects () {
+	new rows;
+	cache_get_row_count(rows);
+
+	for (new i = 0; i < rows; i++) {
+		cache_get_value_name_int(i, "id", Objects[i][id]);
+		cache_get_value_name_int(i, "model", Objects[i][model]);
+		cache_get_value_name_float(i, "pos_x", Objects[i][pos_x]);
+		cache_get_value_name_float(i, "pos_y", Objects[i][pos_y]);
+		cache_get_value_name_float(i, "pos_z", Objects[i][pos_z]);
+		cache_get_value_name_float(i, "rot_x", Objects[i][rot_x]);
+		cache_get_value_name_float(i, "rot_y", Objects[i][rot_y]);
+		cache_get_value_name_float(i, "rot_z", Objects[i][rot_z]);
+		cache_get_value_name_int(i, "draw_distance", Objects[i][draw_distance]);
+		cache_get_value_name(i, "description", Objects[i][description],256);
+
+		Objects[i][internal] = CreateObject(Objects[i][model],Objects[i][pos_x],Objects[i][pos_y],Objects[i][pos_z],Objects[i][rot_x],Objects[i][rot_y],Objects[i][rot_z],Objects[i][draw_distance]);
+	}
+	return 1;
+}
+
+forward LoadVehicles ();
+public LoadVehicles () {
+	new rows;
+	cache_get_row_count(rows);
+
+	for (new i = 0; i < rows; i++) {
+		cache_get_value_name_int(i, "id", Vehicles[i][id]);
+		cache_get_value_name_int(i, "model", Vehicles[i][model]);
+		cache_get_value_name_float(i, "pos_x", Vehicles[i][pos_x]);
+		cache_get_value_name_float(i, "pos_y", Vehicles[i][pos_y]);
+		cache_get_value_name_float(i, "pos_z", Vehicles[i][pos_z]);
+		cache_get_value_name_float(i, "rot", Vehicles[i][rot]);
+		cache_get_value_name_int(i, "color1", Vehicles[i][color_1]);
+		cache_get_value_name_int(i, "color2", Vehicles[i][color_2]);
+		cache_get_value_name_int(i, "respawn_delay", Vehicles[i][respawn_delay]);
+		cache_get_value_name_int(i, "owner", Vehicles[i][owner]);
+		cache_get_value_name(i, "numberplate", Vehicles[i][numberplate],64);
+		cache_get_value_name_int(i, "company", Vehicles[i][company]);
+
+		Vehicles[i][internal] = CreateVehicle(Vehicles[i][model],Vehicles[i][pos_x],Vehicles[i][pos_y],Vehicles[i][pos_z],Vehicles[i][rot],Vehicles[i][color_1],Vehicles[i][color_2],Vehicles[i][respawn_delay]);
+		SetVehicleNumberPlate(Vehicles[i][internal], Vehicles[i][numberplate]);
+	}
+	return 1;
+}
+
 
 //////////////////////////////
 // LOGIN & MYSQL-CONNECTION //

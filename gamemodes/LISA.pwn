@@ -12,8 +12,6 @@
 
 #define MAX_CHECKPOINTS 10
 
-
-
 #define DIALOG_REGISTER  1403
 #define DIALOG_LOGIN 2401
 #define DIALOG_MM_MAIN 1000
@@ -129,9 +127,9 @@ public OnGameModeInit () {
 	AddPlayerClass(0, 1958.3783, 1343.1572, 15.3746, 269.1425, 0, 0, 0, 0, 0, 0);
 
 	// Enable/Disable some samp-functions
-    EnableStuntBonusForAll(0);
+	EnableStuntBonusForAll(0);
 	ShowPlayerMarkers(PLAYER_MARKERS_MODE_OFF);
-    ShowNameTags(1);
+	ShowNameTags(1);
 
 	MySQL_SetupConnection();
 	mysql_log(ALL);
@@ -228,7 +226,7 @@ public OnPlayerText (playerid, text[]) {
 
 ocmd:cmdlist (playerid) {
 	if (PlayerInfo[playerid][level] >= 1 && PlayerInfo[playerid][afk] == false) {
-		SendClientMessage(playerid, -1, "--- Kommandos f�r Spieler ---");
+		SendClientMessage(playerid, -1, "--- Kommandos für Spieler ---");
 		SendClientMessage(playerid, -1, "/cmdlist | /mm | ");
 	}
 
@@ -246,8 +244,8 @@ ocmd:mm (playerid) {
 ocmd:carinfo (playerid) {
 	if (PlayerInfo[playerid][level] >= 1 && PlayerInfo[playerid][afk] == false) {
 		for (new i = 0; i < MAX_VEHICLES; i++) {
-			if (IsPlayerInRangeOfVehicle(playerid,Vehicles[i][internal],2)) {
-			    // TODO
+			if (IsPlayerInRangeOfVehicle(playerid, Vehicles[i][internal], 2)) {
+				// TODO
 			}
 		}
 	}
@@ -263,7 +261,7 @@ ocmd:afk (playerid) {
 		new string[128];
 		GetPlayerName(playerid, string, MAX_PLAYER_NAME);
 		format(string, 128, "%s ist jetzt AFK!", string);
-		SendClientMessageToAll(-1,string);
+		SendClientMessageToAll(-1, string);
 		TogglePlayerControllable(playerid, 0);
 		PlayerInfo[playerid][afk] = true;
 		SaveAllUserStats(playerid);
@@ -276,7 +274,7 @@ ocmd:back (playerid) {
 		new string[128];
 		GetPlayerName(playerid, string, MAX_PLAYER_NAME);
 		format(string, 128, "%s ist jetzt wieder da!", string);
-		SendClientMessageToAll(-1,string);
+		SendClientMessageToAll(-1, string);
 		TogglePlayerControllable(playerid, 1);
 		PlayerInfo[playerid][afk] = false;
 		SaveAllUserStats(playerid);
@@ -305,8 +303,8 @@ ocmd:allowsavespawn (playerid, params[]) {
 ocmd:savespawn (playerid, params[]) {
 	if (PlayerInfo[playerid][level] >= 1 && PlayerInfo[playerid][afk] == false) {
 		if(PlayerInfo[playerid][loggedIn] == true && PlayerInfo[playerid][allowSaveSpawn] == true) {
-		    GetPlayerPos(playerid, PlayerInfo[playerid][spawnX], PlayerInfo[playerid][spawnY], PlayerInfo[playerid][spawnZ]);
-	    	GetPlayerFacingAngle(playerid, PlayerInfo[playerid][spawnA]);
+			GetPlayerPos(playerid, PlayerInfo[playerid][spawnX], PlayerInfo[playerid][spawnY], PlayerInfo[playerid][spawnZ]);
+			GetPlayerFacingAngle(playerid, PlayerInfo[playerid][spawnA]);
 
 			new query1[256], query2[256];
 			mysql_format(handle, query1, sizeof(query1),
@@ -320,17 +318,17 @@ ocmd:savespawn (playerid, params[]) {
 			if (mysql_pquery(handle, query1) == 1 && mysql_pquery(handle, query2) == 1) {
 				PlayerInfo[playerid][allowSaveSpawn] = false;
 
-		  		for (new i = 0; i < MAX_PICKUPS; i++) {
+				for (new i = 0; i < MAX_PICKUPS; i++) {
 					if (PickUps[i][description] == PlayerInfo[playerid][name] && PickUps[i][model] == 1277) {
-					    DestroyPickup(PickUps[i][internal]);
-                        PickUps[i][pos_x] = PlayerInfo[playerid][spawnX];
-                        PickUps[i][pos_y] = PlayerInfo[playerid][spawnY];
-                        PickUps[i][pos_z] = PlayerInfo[playerid][spawnZ];
-			    		PickUps[i][internal] = CreatePickup(PickUps[i][model],PickUps[i][type],PickUps[i][pos_x],PickUps[i][pos_y],PickUps[i][pos_z],PickUps[i][world]);
+						DestroyPickup(PickUps[i][internal]);
+						PickUps[i][pos_x] = PlayerInfo[playerid][spawnX];
+						PickUps[i][pos_y] = PlayerInfo[playerid][spawnY];
+						PickUps[i][pos_z] = PlayerInfo[playerid][spawnZ];
+						PickUps[i][internal] = CreatePickup(PickUps[i][model], PickUps[i][type], PickUps[i][pos_x], PickUps[i][pos_y], PickUps[i][pos_z], PickUps[i][world]);
 
 						SaveAllUserStats(playerid);
-			    		PlayerTextDrawSetString(playerid, PlayerInfo[playerid][textDraw], "~y~Information:~n~~w~Erfolgreich gespeichert!");
-        				PlayerTextDrawShow(playerid, PlayerInfo[playerid][textDraw]);
+						PlayerTextDrawSetString(playerid, PlayerInfo[playerid][textDraw], "~y~Information:~n~~w~Erfolgreich gespeichert!");
+						PlayerTextDrawShow(playerid, PlayerInfo[playerid][textDraw]);
 						SetTimerEx("HideTextDraw", 3000, false, "i", playerid);
 
 						return SendClientMessage(playerid, -1, "Erfolgreich gespeichert!");
@@ -407,7 +405,7 @@ public OnPlayerPickUpPickup (playerid, pickupid) {
 				PlayerTextDrawShow(playerid, PlayerInfo[playerid][textDraw]);
 				SetTimerEx("HideTextDraw", 3000, false, "i", playerid);
 			}
-			if (PickUps[i][model] == 1275) {
+			/* if (PickUps[i][model] == 1275) {
 				if (PickUps[i][company] == 1) { // Mower
 					PlayerTextDrawSetString(playerid, PlayerInfo[playerid][textDraw], "~y~Information:~n~~w~Willkommen im Dienst");
 					PlayerTextDrawShow(playerid, PlayerInfo[playerid][textDraw]);
@@ -433,7 +431,7 @@ public OnPlayerPickUpPickup (playerid, pickupid) {
 						}
 					}
 				}
-			}
+			} */
 		}
 	}
 
@@ -505,10 +503,10 @@ public OnDialogResponse (playerid, dialogid, response, listitem, inputtext[]) {
 
 	if (dialogid == DIALOG_MM_MAIN) {
 	    if (listitem == 0 && response == 1) { //Services
-		    ShowPlayerDialog(playerid, DIALOG_MM_SERVICE, DIALOG_STYLE_LIST, "MobileManager", "Comming soon...\n", "Okay", "Zur�ck");
+		    ShowPlayerDialog(playerid, DIALOG_MM_SERVICE, DIALOG_STYLE_LIST, "MobileManager", "Comming soon...\n", "Okay", "Zurück");
 	    }
 	    if (listitem == 1 && response == 1) { //Navigation
-		    ShowPlayerDialog(playerid, DIALOG_MM_NAVIGATION, DIALOG_STYLE_LIST, "MobileManager", "Eismann\n", "Okay", "Zur�ck");
+		    ShowPlayerDialog(playerid, DIALOG_MM_NAVIGATION, DIALOG_STYLE_LIST, "MobileManager", "Eismann\n", "Okay", "Zurück");
 	    }
 
 		if (listitem == 2 && response == 1) { //Mein Profil
@@ -527,7 +525,7 @@ public OnDialogResponse (playerid, dialogid, response, listitem, inputtext[]) {
 			GetPlayerName(playerid, profil_text, MAX_PLAYER_NAME);
 
 			format(profil_text, sizeof (profil_text), "Name: %s\nRang: %d - %s\nBargeld: %d\nKontostand: %d\n", profil_text, PlayerInfo[playerid][level], rang, PlayerInfo[playerid][money], PlayerInfo[playerid][bank_balance]);
-			ShowPlayerDialog(playerid, DIALOG_MM_PROFIL, DIALOG_STYLE_LIST, "MobileManager", profil_text, "Okay", "Zur�ck");
+			ShowPlayerDialog(playerid, DIALOG_MM_PROFIL, DIALOG_STYLE_LIST, "MobileManager", profil_text, "Okay", "Zurück");
 		}
 	}
 
@@ -543,7 +541,7 @@ public OnDialogResponse (playerid, dialogid, response, listitem, inputtext[]) {
 			CheckPoints[0][internal] = SetPlayerCheckpoint(playerid,CheckPoints[0][pos_x],CheckPoints[0][pos_y],CheckPoints[0][pos_z],CheckPoints[0][size]);
 		}
 		if (PlayerInfo[playerid][level] == 3) {
-			ShowPlayerDialog(playerid, DIALOG_MM_ADMIN, DIALOG_STYLE_MSGBOX, "MobileManager", "ADMIN-Modus\nM�chtest du dich teleportieren?", "Teleport", "Marker");
+			ShowPlayerDialog(playerid, DIALOG_MM_ADMIN, DIALOG_STYLE_MSGBOX, "MobileManager", "ADMIN-Modus\nMöchtest du dich teleportieren?", "Teleport", "Marker");
 		}
 	}
 
@@ -562,10 +560,10 @@ public OnDialogResponse (playerid, dialogid, response, listitem, inputtext[]) {
 			ShowPlayerDialog(playerid, DIALOG_BANK_BALANCE, DIALOG_STYLE_MSGBOX, "Kontostand - Bank of San Andreas", balance_text, "Okay", "");
 	    }
 	    if (listitem == 1 && response == 1) {
-			 ShowPlayerDialog(playerid, DIALOG_BANK_DEPOSIT, DIALOG_STYLE_INPUT, "Einzahlung - Bank of San Andreas","Betrag eingeben:", "Okay", "Zur�ck");
+			 ShowPlayerDialog(playerid, DIALOG_BANK_DEPOSIT, DIALOG_STYLE_INPUT, "Einzahlung - Bank of San Andreas","Betrag eingeben:", "Okay", "Zurück");
 	    }
 		if (listitem == 2 && response == 1) {
-			 ShowPlayerDialog(playerid, DIALOG_BANK_PAYOUT, DIALOG_STYLE_INPUT, "Auszahlung - Bank of San Andreas","Betrag eingeben:", "Okay", "Zur�ck");
+			 ShowPlayerDialog(playerid, DIALOG_BANK_PAYOUT, DIALOG_STYLE_INPUT, "Auszahlung - Bank of San Andreas","Betrag eingeben:", "Okay", "Zurück");
 		}
 	}
 	if (dialogid == DIALOG_BANK_DEPOSIT && response == 1) {
@@ -578,10 +576,10 @@ public OnDialogResponse (playerid, dialogid, response, listitem, inputtext[]) {
 				SaveAllUserStats(playerid);
 				ShowPlayerDialog(playerid, DIALOG_BANK_MAIN, DIALOG_STYLE_LIST, "Bank of San Andreas", DIALOG_BANK_MAIN_TEXT, "Okay", "Beenden");
 			} else {
-				ShowPlayerDialog(playerid, DIALOG_BANK_DEPOSIT, DIALOG_STYLE_INPUT, "Einzahlung - Bank of San Andreas","{FF0000}Einzahlung nicht m�glich!", "Okay", "Zur�ck");
+				ShowPlayerDialog(playerid, DIALOG_BANK_DEPOSIT, DIALOG_STYLE_INPUT, "Einzahlung - Bank of San Andreas","{FF0000}Einzahlung nicht möglich!", "Okay", "Zurück");
 			}
 		} else {
-			ShowPlayerDialog(playerid, DIALOG_BANK_DEPOSIT, DIALOG_STYLE_INPUT, "Einzahlung - Bank of San Andreas","{FF0000}Einzahlung nicht m�glich!", "Okay", "Zur�ck");
+			ShowPlayerDialog(playerid, DIALOG_BANK_DEPOSIT, DIALOG_STYLE_INPUT, "Einzahlung - Bank of San Andreas","{FF0000}Einzahlung nicht möglich!", "Okay", "Zurück");
 		}
 	}
 	if (dialogid == DIALOG_BANK_PAYOUT && response == 1) {
@@ -594,10 +592,10 @@ public OnDialogResponse (playerid, dialogid, response, listitem, inputtext[]) {
 				SaveAllUserStats(playerid);
 				ShowPlayerDialog(playerid, DIALOG_BANK_MAIN, DIALOG_STYLE_LIST, "Bank of San Andreas", DIALOG_BANK_MAIN_TEXT, "Okay", "Beenden");
 			} else {
-				ShowPlayerDialog(playerid, DIALOG_BANK_PAYOUT, DIALOG_STYLE_INPUT, "Auszahlung - Bank of San Andreas","{FF0000}Auszahlung nicht m�glich!", "Okay", "Zur�ck");
+				ShowPlayerDialog(playerid, DIALOG_BANK_PAYOUT, DIALOG_STYLE_INPUT, "Auszahlung - Bank of San Andreas","{FF0000}Auszahlung nicht möglich!", "Okay", "Zurück");
 			}
 		} else {
-			ShowPlayerDialog(playerid, DIALOG_BANK_PAYOUT, DIALOG_STYLE_INPUT, "Auszahlung - Bank of San Andreas","{FF0000}Auszahlung nicht m�glich!", "Okay", "Zur�ck");
+			ShowPlayerDialog(playerid, DIALOG_BANK_PAYOUT, DIALOG_STYLE_INPUT, "Auszahlung - Bank of San Andreas","{FF0000}Auszahlung nicht möglich!", "Okay", "Zurück");
 		}
 	}
 	if (dialogid == DIALOG_BANK_PAYOUT && (response == 1 || response == 0)) {
@@ -824,7 +822,7 @@ stock SaveUserBankBalance (playerid) {
 	if (!PlayerInfo[playerid][loggedIn]) return 1;
 
 	new query[256];
-	mysql_format(handle, query, sizeof(query), "UPDATE accounts SET bank_balance = '%d' WHERE id = '%d'",
+	mysql_format(handle, query, sizeof(query), "UPDATE `accounts` SET bank_balance = '%d' WHERE id = '%d'",
 		PlayerInfo[playerid][bank_balance], PlayerInfo[playerid][id]);
 	mysql_pquery(handle, query);
 
@@ -835,8 +833,8 @@ stock SaveUserHealth (playerid) {
 	if (!PlayerInfo[playerid][loggedIn]) return 1;
 
 	new query[256];
-	mysql_format(handle, query, sizeof(query), "UPDATE accounts SET health = '%f' WHERE id = '%d'",
-		PlayerInfo[playerid][health],PlayerInfo[playerid][id]);
+	mysql_format(handle, query, sizeof(query), "UPDATE `accounts` SET `health` = '%f' WHERE `id` = '%d'",
+		PlayerInfo[playerid][health], PlayerInfo[playerid][id]);
 	mysql_pquery(handle, query);
 
 	return 1;
@@ -921,7 +919,7 @@ public LoadVehicles () {
 forward OnUserCheck (playerid);
 public OnUserCheck (playerid) {
 	if (cache_num_rows() == 1) {
-		ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "LiSA - Anmeldung", "Bitte logge Dich ein:", "Ok", "Abbrechen");
+		ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "LiSA - Anmeldung", "Bitte logge Dich ein:", "Okay", "Abbrechen");
 	} else {
 		return Kick(playerid); 	// User is not whitelisted
 	}
@@ -932,8 +930,8 @@ public OnUserCheck (playerid) {
 forward OnUserLogin (playerid);
 public OnUserLogin (playerid) {
 	if (cache_num_rows() != 1) {
-	    // User not found or bad password
-		ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "LiSA - Anmeldung", "Bitte logge Dich ein:\n{FF0000}Falsches Passwort!", "Ok", "Abbrechen");
+		// User not found or bad password
+		ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "LiSA - Anmeldung", "Bitte logge Dich ein:\n{FF0000}Falsches Passwort!", "Okay", "Abbrechen");
 	} else {
 		cache_get_value_name_int(0, "id", PlayerInfo[playerid][id]);
 		cache_get_value_name_int(0, "level", PlayerInfo[playerid][level]);
@@ -969,27 +967,23 @@ public OnUserLogin (playerid) {
 }
 
 stock MySQL_SetupConnection (ttl = 3) {
-	print("[MySQL] Verbindungsaufbau...");
+	print("[MySQL] Connecting...");
 	mysql_log(ERROR);
 	handle = mysql_connect(MYSQL_HOST, MYSQL_USER, MYSQL_PASS, MYSQL_DB);
 
-	//Pr�fen und gegebenenfalls wiederholen
 	if (mysql_errno() != 0) {
-		//Fehler im Verbindungsaufbau, pr�fe ob ein weiterer Versuch gestartet werden soll
 		if (ttl > 1) {
-			//Versuche erneut eine Verbindung aufzubauen
-			print("[MySQL] Es konnte keine Verbindung zur Datenbank hergestellt werden.");
-			printf("[MySQL] Starte neuen Verbindungsversuch (TTL: %d).", ttl-1);
+			print("[MySQL] Could not connect to database!");
+			printf("[MySQL] retry (TTL: %d).", ttl-1);
 			return MySQL_SetupConnection(ttl-1);
 		} else {
-			//Abbrechen und Server schlie�en
-			print("[MySQL] Es konnte keine Verbindung zur Datenbank hergestellt werden.");
-			print("[MySQL] Bitte pr�fen Sie die Verbindungsdaten.");
-			print("[MySQL] Der Server wird heruntergefahren.");
+			print("[MySQL] Could not connect to database.");
+			print("[MySQL] Please check credentials.");
+			print("[MySQL] shutdown server NOW!");
 			return SendRconCommand("exit");
 		}
 	}
-	printf("[MySQL] Die Verbindung zur Datenbank wurde erfolgreich hergestellt! Handle: %d", handle);
+	printf("[MySQL] Connected to database! Handle: %d", handle);
 
 	return 1;
 }
@@ -1005,7 +999,7 @@ public ScoreTimer (playerid) {
 	if (PlayerInfo[playerid][nextScore] >= 60) {
 		PlayerInfo[playerid][score] += 1;
 		SetPlayerScore(playerid, PlayerInfo[playerid][score]);
-        PlayerInfo[playerid][nextScore] = 0;
+		PlayerInfo[playerid][nextScore] = 0;
 	}
 	SaveAllUserStats(playerid);
 }

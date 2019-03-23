@@ -1,0 +1,17 @@
+{
+  "cmd": "$SAMP_SERVER_ROOT\\pawno\\pawncc.exe",
+  "args": [
+    "-i$SAMP_SERVER_ROOT\\pawno\\include",
+    "-\\;+",
+    "-\\(+",
+    "-d2",
+    "$FILE_ACTIVE"
+  ],
+  "sh": false,
+  "cwd": "{FILE_ACTIVE_PATH}",
+  "errorMatch": "^(?<file>.+)\\((?<line>[0-9]+)\\)",
+  "env": {
+    "FILE_ACTIVE": "{FILE_ACTIVE}",
+    "SAMP_SERVER_ROOT": "{PROJECT_PATH}"
+  }
+}

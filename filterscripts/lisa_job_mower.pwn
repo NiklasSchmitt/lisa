@@ -43,6 +43,9 @@ enum player {
 	score,
 	nextScore,
 	timerScore,
+	jobScore,
+	nextJobScore,
+	timerJobScore,
 	Float:spawnX,
 	Float:spawnY,
 	Float:spawnZ,
@@ -123,17 +126,11 @@ main () {
 }
 
 public OnFilterScriptInit () {
-	// Enable/Disable some samp-functions
-	EnableStuntBonusForAll(0);
-	ShowPlayerMarkers(PLAYER_MARKERS_MODE_OFF);
-	ShowNameTags(1);
-
 	MySQL_SetupConnection();
 	mysql_log(ALL);
 
-	mysql_pquery(handle, "SELECT * FROM pickups ORDER BY id ASC", "LoadPickUps");
-	mysql_pquery(handle, "SELECT * FROM objects ORDER BY id ASC", "LoadObjects");
-	mysql_pquery(handle, "SELECT * FROM vehicles ORDER BY id ASC", "LoadVehicles");
+	mysql_pquery(handle, "SELECT * FROM `pickups` WHERE `company` = 2", "LoadPickUps");
+	mysql_pquery(handle, "SELECT * FROM `vehicles`", "LoadVehicles");
 
 	return 1;
 }
@@ -216,33 +213,18 @@ public OnPlayerObjectMoved (playerid, objectid) {
 }
 
 public OnPlayerPickUpPickup (playerid, pickupid) {
+	// https://wiki.sa-mp.com/wiki/GetPlayerDistanceFromPoint  > https://wiki.sa-mp.com/wiki/VectorSize???
 	new string[256];
 	for (new i = 0; i <= MAX_PICKUPS; i++) {
 			if (PickUps[i][model] == 1275) {
-				if (PickUps[i][company] == 1) { // Mower
+				if (PickUps[i][company] == 2) { // Spedition
 					PlayerTextDrawSetString(playerid, PlayerInfo[playerid][textDraw], "~y~Information:~n~~w~Willkommen im Dienst");
 					PlayerTextDrawShow(playerid, PlayerInfo[playerid][textDraw]);
 					SetTimerEx("HideTextDraw", 3000, false, "i", playerid);
 
-					for (new v = 0; v < MAX_VEHICLES; v++) {
-						if (Vehicles[v][internal] == 0) {
-						Vehicles[v][model] = 414;
-						Vehicles[v][pos_x] = 1220.3572;
-						Vehicles[v][pos_y] = 192.3784;
-						Vehicles[v][pos_z] = 19.5469;
-						Vehicles[v][rot] = 338.3111;
-						Vehicles[v][color_1] = -1;
-						Vehicles[v][color_2] = -1;
-						Vehicles[v][respawn_delay] = -1;
-						Vehicles[v][owner] = 0;
-						format(Vehicles[v][numberplate], 64, "LiSA");
-
-						Vehicles[v][internal] = CreateVehicle(Vehicles[v][model], Vehicles[v][pos_x], Vehicles[v][pos_y], Vehicles[v][pos_z], Vehicles[v][rot], Vehicles[v][color_1], Vehicles[v][color_2], -1);
-						SetVehicleNumberPlate(Vehicles[i][internal], Vehicles[i][numberplate]);
-
-						return 1;
-						}
-					}
+					// Load User and start job-timers
+					
+					//SetPlayerSkin(playerid, 200);
 				}
 			}
 	}
@@ -303,16 +285,6 @@ public OnVehicleStreamOut (vehicleid, forplayerid) {
 }
 
 public OnDialogResponse (playerid, dialogid, response, listitem, inputtext[]) {
-	if (dialogid == DIALOG_LOGIN) {
-		if(!response) return Kick(playerid);
-		if(strlen(inputtext) < 4) return ShowPlayerDialog(playerid, DIALOG_LOGIN, DIALOG_STYLE_PASSWORD, "LiSA - Anmeldung", "Bitte logge Dich ein:\n{FF0000}Falsches Passwort!", "Ok", "Abbrechen");
-
-		new query[256];
-		mysql_format(handle, query, sizeof(query), "SELECT id, level, skin, health, money, bank_balance, score, score_timer, spawn_x, spawn_y, spawn_z FROM accounts WHERE name = '%e' AND password = SHA2('%e',256)", PlayerInfo[playerid][name], inputtext);
-		mysql_pquery(handle, query, "OnUserLogin", "d", playerid);
-		return 1;
-	}
-
 	return 0;
 }
 
@@ -367,28 +339,6 @@ stock SaveUserMoney (playerid) {
 	return 1;
 }
 
-stock SaveUserBankBalance (playerid) {
-	if (!PlayerInfo[playerid][loggedIn]) return 1;
-
-	new query[256];
-	mysql_format(handle, query, sizeof(query), "UPDATE accounts SET bank_balance = '%d' WHERE id = '%d'",
-		PlayerInfo[playerid][bank_balance], PlayerInfo[playerid][id]);
-	mysql_pquery(handle, query);
-
-	return 1;
-}
-
-stock SaveUserHealth (playerid) {
-	if (!PlayerInfo[playerid][loggedIn]) return 1;
-
-	new query[256];
-	mysql_format(handle, query, sizeof(query), "UPDATE accounts SET health = '%f' WHERE id = '%d'",
-		PlayerInfo[playerid][health],PlayerInfo[playerid][id]);
-	mysql_pquery(handle, query);
-
-	return 1;
-}
-
 //////////
 // LOAD //
 //////////
@@ -413,7 +363,7 @@ public LoadPickUps () {
 	}
 	return 1;
 }
-
+/*
 forward LoadObjects ();
 public LoadObjects () {
 	new rows;
@@ -459,7 +409,7 @@ public LoadVehicles () {
 		SetVehicleNumberPlate(Vehicles[i][internal], Vehicles[i][numberplate]);
 	}
 	return 1;
-}
+} */
 
 
 //////////////////////////////

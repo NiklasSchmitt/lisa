@@ -4,6 +4,7 @@
 #include <a_mysql>
 #include <ocmd>
 #include <sscanf2>
+#include <a_zones>
 
 #define MYSQL_HOST "127.0.0.1"
 #define MYSQL_USER "root"
@@ -25,6 +26,8 @@
 #define DIALOG_BANK_DEPOSIT 1012
 #define DIALOG_BANK_PAYOUT 1013
 
+#define DIALOG_CARINFO_MAIN 1020
+
 #define DIALOG_MM_MAIN_TEXT "Services\nNavigation\nMein Profil\n"
 
 #define DIALOG_BANK_MAIN_TEXT "Kontostand\nEinzahlung\nAuszahlung\n"
@@ -43,6 +46,9 @@ enum player {
 	score,
 	nextScore,
 	timerScore,
+	jobScore,
+	nextJobScore,
+	timerJobScore,
 	Float:spawnX,
 	Float:spawnY,
 	Float:spawnZ,
@@ -127,6 +133,7 @@ public OnGameModeInit () {
 	AddPlayerClass(0, 1958.3783, 1343.1572, 15.3746, 269.1425, 0, 0, 0, 0, 0, 0);
 
 	// Enable/Disable some samp-functions
+	LimitGlobalChatRadius(200000000);
 	EnableStuntBonusForAll(0);
 	ShowPlayerMarkers(PLAYER_MARKERS_MODE_OFF);
 	ShowNameTags(1);
@@ -244,14 +251,71 @@ ocmd:mm (playerid) {
 ocmd:carinfo (playerid) {
 	if (PlayerInfo[playerid][level] >= 1 && PlayerInfo[playerid][afk] == false) {
 		for (new i = 0; i < MAX_VEHICLES; i++) {
-			if (IsPlayerInRangeOfVehicle(playerid, Vehicles[i][internal], 2)) {
-				// TODO
+			if (IsPlayerInRangeOfVehicle(playerid, Vehicles[i][internal], 2) || IsPlayerInVehicle(playerid, Vehicles[i][internal])) {
+				//ShowPlayerDialog(playerid, DIALOG_MM_MAIN, DIALOG_STYLE_LIST, "MobileManager", DIALOG_MM_MAIN_TEXT, "Okay", "Beenden");
 			}
 		}
 	}
 	return 1;
 }
 
+ocmd:savecarspawn (playerid) {
+	if (PlayerInfo[playerid][level] >= 1 && PlayerInfo[playerid][afk] == false) {
+		for (new i = 0; i < MAX_VEHICLES; i++) {
+			if (IsPlayerInVehicle(playerid, Vehicles[i][internal])) {
+				new Float:posx, Float:posy, Float:posz, Float:posa;
+				GetVehiclePos(Vehicles[i][internal], posx, posy, posz);
+				GetVehicleZAngle(Vehicles[i][internal], posa);
+				Vehicles[i][pos_x] = posx;
+				Vehicles[i][pos_y] = posy;
+				Vehicles[i][pos_z] = posz;
+				Vehicles[i][rot] = posa;
+
+				SaveCarSpawn(i);
+				PlayerTextDrawSetString(playerid, PlayerInfo[playerid][textDraw], "~y~Information:~n~~w~Erfolgreich gespeichert!");
+				PlayerTextDrawShow(playerid, PlayerInfo[playerid][textDraw]);
+				SetTimerEx("HideTextDraw", 3000, false, "i", playerid);
+				return 1;
+			}
+		}
+	}
+	return 1;
+}
+
+ocmd:savetrailerspawn (playerid, params[]) {
+	if (PlayerInfo[playerid][level] >= 2 && PlayerInfo[playerid][afk] == false) {
+		if (IsPlayerInAnyVehicle(playerid) && IsTrailerAttachedToVehicle(GetPlayerVehicleID(playerid))) {
+			new trailer = GetVehicleTrailer(GetPlayerVehicleID(playerid));
+			for (new i = 0; i < MAX_VEHICLES; i++) {
+				if (Vehicles[i][internal] == trailer) {
+					new Float:posx, Float:posy, Float:posz, Float:posa;
+					GetVehiclePos(trailer, posx, posy, posz);
+					GetVehicleZAngle(trailer, posa);
+					Vehicles[i][pos_x] = posx;
+					Vehicles[i][pos_y] = posy;
+					Vehicles[i][pos_z] = posz;
+					Vehicles[i][rot] = posa;
+
+					SaveCarSpawn(i);
+					PlayerTextDrawSetString(playerid, PlayerInfo[playerid][textDraw], "~y~Information:~n~~w~Erfolgreich gespeichert!");
+					PlayerTextDrawShow(playerid, PlayerInfo[playerid][textDraw]);
+					SetTimerEx("HideTextDraw", 3000, false, "i", playerid);
+					return 1;
+				}
+			}
+		}
+	}
+	return 1;
+}
+
+ocmd:detach (playerid, params[]) {
+	if (PlayerInfo[playerid][level] >= 1 && PlayerInfo[playerid][afk] == false) {
+		if (IsPlayerInAnyVehicle(playerid) && IsTrailerAttachedToVehicle(GetPlayerVehicleID(playerid))) {
+			DetachTrailerFromVehicle(GetPlayerVehicleID(playerid));
+		}
+	}
+	return 1;
+}
 ////////////////
 // AFK & BACK //
 ////////////////
@@ -405,33 +469,6 @@ public OnPlayerPickUpPickup (playerid, pickupid) {
 				PlayerTextDrawShow(playerid, PlayerInfo[playerid][textDraw]);
 				SetTimerEx("HideTextDraw", 3000, false, "i", playerid);
 			}
-			/* if (PickUps[i][model] == 1275) {
-				if (PickUps[i][company] == 1) { // Mower
-					PlayerTextDrawSetString(playerid, PlayerInfo[playerid][textDraw], "~y~Information:~n~~w~Willkommen im Dienst");
-					PlayerTextDrawShow(playerid, PlayerInfo[playerid][textDraw]);
-					SetTimerEx("HideTextDraw", 3000, false, "i", playerid);
-
-					for (new v = 0; v < MAX_VEHICLES; v++) {
-						if (Vehicles[v][internal] == 0) {
-						Vehicles[v][model] = 414;
-						Vehicles[v][pos_x] = 1220.3572;
-						Vehicles[v][pos_y] = 192.3784;
-						Vehicles[v][pos_z] = 19.5469;
-						Vehicles[v][rot] = 338.3111;
-						Vehicles[v][color_1] = -1;
-						Vehicles[v][color_2] = -1;
-						Vehicles[v][respawn_delay] = -1;
-						Vehicles[v][owner] = 0;
-						format(Vehicles[v][numberplate], 64, "LiSA");
-
-						Vehicles[v][internal] = CreateVehicle(Vehicles[v][model], Vehicles[v][pos_x], Vehicles[v][pos_y], Vehicles[v][pos_z], Vehicles[v][rot], Vehicles[v][color_1], Vehicles[v][color_2], -1);
-						SetVehicleNumberPlate(Vehicles[i][internal], Vehicles[i][numberplate]);
-
-						return 1;
-						}
-					}
-				}
-			} */
 		}
 	}
 
@@ -506,7 +543,7 @@ public OnDialogResponse (playerid, dialogid, response, listitem, inputtext[]) {
 		    ShowPlayerDialog(playerid, DIALOG_MM_SERVICE, DIALOG_STYLE_LIST, "MobileManager", "Comming soon...\n", "Okay", "Zurück");
 	    }
 	    if (listitem == 1 && response == 1) { //Navigation
-		    ShowPlayerDialog(playerid, DIALOG_MM_NAVIGATION, DIALOG_STYLE_LIST, "MobileManager", "Eismann\n", "Okay", "Zurück");
+		    ShowPlayerDialog(playerid, DIALOG_MM_NAVIGATION, DIALOG_STYLE_LIST, "MobileManager", "Eismann\nSpedition LV", "Okay", "Zurück");
 	    }
 
 		if (listitem == 2 && response == 1) { //Mein Profil
@@ -540,6 +577,17 @@ public OnDialogResponse (playerid, dialogid, response, listitem, inputtext[]) {
 			}
 			CheckPoints[0][internal] = SetPlayerCheckpoint(playerid,CheckPoints[0][pos_x],CheckPoints[0][pos_y],CheckPoints[0][pos_z],CheckPoints[0][size]);
 		}
+		if (listitem == 1 && response == 1) {
+			if (CheckPoints[0][internal] == 0) {
+				CheckPoints[0][pos_x] = 1025.2941;
+				CheckPoints[0][pos_y] = 2135.9253;
+				CheckPoints[0][pos_z] = 10.8203;
+				CheckPoints[0][size] = 5;
+				CheckPoints[0][usuage] = 1; // 1 = Navigation | 2 = Job
+			}
+			CheckPoints[0][internal] = SetPlayerCheckpoint(playerid,CheckPoints[0][pos_x],CheckPoints[0][pos_y],CheckPoints[0][pos_z],CheckPoints[0][size]);
+		}
+
 		if (PlayerInfo[playerid][level] == 3) {
 			ShowPlayerDialog(playerid, DIALOG_MM_ADMIN, DIALOG_STYLE_MSGBOX, "MobileManager", "ADMIN-Modus\nMöchtest du dich teleportieren?", "Teleport", "Marker");
 		}
@@ -611,13 +659,6 @@ public OnDialogResponse (playerid, dialogid, response, listitem, inputtext[]) {
 
 public OnPlayerClickPlayer (playerid, clickedplayerid, source) {
 	return 1;
-}
-////////////////////
-// JOBS & SHOPS //
-////////////////////
-
-stock JobMowerDriver (playerid) {
-
 }
 
 ////////////////////
@@ -840,6 +881,16 @@ stock SaveUserHealth (playerid) {
 	return 1;
 }
 
+stock SaveCarSpawn (vehicleid) {
+	if (!Vehicles[vehicleid][internal]) return 1;
+
+	new query[256];
+	mysql_format(handle, query, sizeof(query), "UPDATE `vehicles` SET `pos_x` = '%f',`pos_y` = '%f',`pos_z` = '%f',`rot` = '%f' WHERE `id` = '%d'",
+		Vehicles[vehicleid][pos_x], Vehicles[vehicleid][pos_y], Vehicles[vehicleid][pos_z], Vehicles[vehicleid][rot], Vehicles[vehicleid][id]);
+	mysql_pquery(handle, query);
+
+	return 1;
+}
 //////////
 // LOAD //
 //////////
@@ -952,6 +1003,7 @@ public OnUserLogin (playerid) {
 		SetSpawnInfo(playerid, 0, PlayerInfo[playerid][skin], PlayerInfo[playerid][spawnX], PlayerInfo[playerid][spawnY], PlayerInfo[playerid][spawnZ], PlayerInfo[playerid][spawnA], 0, 0, 0, 0, 0, 0);
 
 		SetPlayerColor(playerid, 0xCCE2FFFF);
+		SetPlayerSkin(playerid, PlayerInfo[playerid][skin]);
 		new string[128];
 		GetPlayerName(playerid,string,MAX_PLAYER_NAME);
 		format(string,128, "%s hat den Server betreten.", string);

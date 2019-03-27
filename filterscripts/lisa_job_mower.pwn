@@ -33,29 +33,24 @@ new handle; //MySQL-Handle
 
 enum player {
 	id,
-	bool:loggedIn,
-	name[MAX_PLAYER_NAME],
-	level,
+	name[MAX_PLAYER_NAME+1],
 	skin,
-	Float:health,
 	money,
 	bank_balance,
 	score,
 	nextScore,
 	timerScore,
-	jobScore,
-	nextJobScore,
-	timerJobScore,
-	Float:spawnX,
-	Float:spawnY,
-	Float:spawnZ,
-	Float:spawnA,
-	bool:allowSaveSpawn,
 	textDraw,
 	bool:showTextDraw,
-	bool:afk,
-	bool:isInJob,
-	company
+	bool:inJob,
+	company,
+	bool:trailerAttached,
+	maxTrailerCapacity,
+	currentTrailerCapacity,
+	nextCpPosX,
+	nextCpPosY,
+	nextCpPosZ,
+
 }
 
 enum pickup {
@@ -69,20 +64,6 @@ enum pickup {
 	world,
 	description[256],
 	company,
-}
-
-enum object {
-	id,
-	internal,
-	model,
-	Float:pos_x,
-	Float:pos_y,
-	Float:pos_z,
-	Float:rot_x,
-	Float:rot_y,
-	Float:rot_z,
-	draw_distance,
-	description[256],
 }
 
 enum vehicle {
@@ -113,11 +94,14 @@ enum checkpoint {
 	company
 }
 
+
+
 new PlayerInfo[MAX_PLAYERS][player];
 new PickUps[MAX_PICKUPS][pickup];
-new Objects[MAX_OBJECTS][object];
+//new Objects[MAX_OBJECTS][object];
 new Vehicles[MAX_VEHICLES][vehicle];
 new CheckPoints[MAX_CHECKPOINTS][checkpoint];
+new CurrentCheckPoint[MAX_CHECKPOINTS][checkpoint];
 
 main () {
 	print("\n----------------------------------");
@@ -130,7 +114,8 @@ public OnFilterScriptInit () {
 	mysql_log(ALL);
 
 	mysql_pquery(handle, "SELECT * FROM `pickups` WHERE `company` = 2", "LoadPickUps");
-	mysql_pquery(handle, "SELECT * FROM `vehicles`", "LoadVehicles");
+	mysql_pquery(handle, "SELECT * FROM `checkpoints` WHERE `company` = 2", "LoadCheckpoints");
+	mysql_pquery(handle, "SELECT * FROM `vehicles` WHERE `company` = 2", "LoadVehicles");
 
 	return 1;
 }
@@ -142,6 +127,14 @@ public OnFilterScriptExit() {
 }
 
 public OnPlayerSpawn (playerid) {
+	new playername[MAX_PLAYER_NAME + 1];
+	GetPlayerName(playerid, playername, sizeof(playername));
+	PlayerInfo[playerid][name] = playername;
+
+	new query[256];
+	mysql_format(handle, query, sizeof(query), "SELECT id, skin, job, job_score, job_timer FROM accounts WHERE name = '%e'", PlayerInfo[playerid][name]);
+	mysql_pquery(handle, query, "OnUserLoadJob", "d", playerid);
+
 	return 1;
 }
 
@@ -166,6 +159,27 @@ public OnPlayerCommandText (playerid, cmdtext[]) {
 }
 
 public OnPlayerEnterVehicle (playerid, vehicleid, ispassenger) {
+	new string[256];
+	for (new i = 0; i <= MAX_VEHICLES; i++) {
+		if (Vehicles[i][internal] == vehicleid && Vehicles[i][company] == 2){
+			//TODO Check if a trailer is attached and if this trailer is one of the company
+			// && IsTrailerAttachedToVehicle(vehicleid)) {
+			//new trailer = GetVehicleTrailer(GetPlayerVehicleID(playerid));
+			//for (new i = 0; i < MAX_VEHICLES; i++) {
+				//if (Vehicles[i][internal] == trailer) {
+			if ( PlayerInfo[playerid][company] == 2 && PlayerInfo[playerid][inJob] == true && IsTrailerAttachedToVehicle(vehicleid)) {
+				if (PlayerInfo[playerid][currentTrailerCapacity] == 0) {
+					for (new i = 0; i <= MAX_CHECKPOINTS; i++) {
+						if (CheckPoints[i][company] == 2 && CheckPoints[i][usuage] == 3) {
+							CurrentCheckPoint[0][internal] = SetPlayerCheckpoint(playerid,CheckPoints[i][pos_x],CheckPoints[i][pos_y],CheckPoints[i][pos_z],CheckPoints[i][size]);
+						}
+					}
+				}else{
+					// do the rest of your tour
+				}
+			}
+		}
+	}
 	return 1;
 }
 
@@ -216,17 +230,31 @@ public OnPlayerPickUpPickup (playerid, pickupid) {
 	// https://wiki.sa-mp.com/wiki/GetPlayerDistanceFromPoint  > https://wiki.sa-mp.com/wiki/VectorSize???
 	new string[256];
 	for (new i = 0; i <= MAX_PICKUPS; i++) {
-			if (PickUps[i][model] == 1275) {
-				if (PickUps[i][company] == 2) { // Spedition
-					PlayerTextDrawSetString(playerid, PlayerInfo[playerid][textDraw], "~y~Information:~n~~w~Willkommen im Dienst");
-					PlayerTextDrawShow(playerid, PlayerInfo[playerid][textDraw]);
-					SetTimerEx("HideTextDraw", 3000, false, "i", playerid);
+		if (PickUps[i][internal] == pickupid && PickUps[i][model] == 1275 && PickUps[i][company] == 2) {
+			if (PlayerInfo[playerid][company] == 2 && PlayerInfo[playerid][inJob] == false) { // Spedition
+				PlayerTextDrawSetString(playerid, PlayerInfo[playerid][textDraw], "~y~Information:~n~~w~Willkommen im Dienst");
+				PlayerTextDrawShow(playerid, PlayerInfo[playerid][textDraw]);
+				SetTimerEx("HideTextDraw", 3000, false, "i", playerid);
 
-					// Load User and start job-timers
-					
-					//SetPlayerSkin(playerid, 200);
-				}
+				// Load User and start job-timers
+				SetPlayerSkin(playerid, 133);
+				SetPlayerColor(playerid, 0x80a7e5);
+				PlayerInfo[playerid][inJob] = true;
+				PlayerInfo[playerid][timerScore] = SetTimer ("ScoreTimer", 60000, true);
+
+				PlayerInfo[playerid][maxTrailerCapacity] = 250;
+				PlayerInfo[playerid][trailerAttached] = false;
+				return 1;
 			}
+
+			if (PlayerInfo[playerid][company] == 2 && PlayerInfo[playerid][inJob] == true) { // Spedition
+				SetPlayerSkin(playerid, PlayerInfo[playerid][skin]);
+				SetPlayerColor(playerid, 0xCCE2FFFF);
+				PlayerInfo[playerid][inJob] = false;
+				KillTimer(PlayerInfo[playerid][timerScore]);
+				return 1;
+			}
+		}
 	}
 
 	return 1;
@@ -318,19 +346,15 @@ public HideTextDraw (playerid) {
 //////////
 
 stock SaveAllUserStats (playerid) {
-	if (!PlayerInfo[playerid][loggedIn]) return 1;
-
 	new query[256];
-	mysql_format(handle, query, sizeof(query), "UPDATE accounts SET health = '%f', money = '%d', bank_balance = '%d', score = '%d', score_timer = '%d' WHERE id = '%d'",
-		PlayerInfo[playerid][health], PlayerInfo[playerid][money], PlayerInfo[playerid][bank_balance], PlayerInfo[playerid][score], PlayerInfo[playerid][nextScore], PlayerInfo[playerid][id]);
+	mysql_format(handle, query, sizeof(query), "UPDATE accounts SET job_score = '%d', job_timer = '%d' WHERE id = '%d'",
+		PlayerInfo[playerid][score], PlayerInfo[playerid][nextScore], PlayerInfo[playerid][id]);
 	mysql_pquery(handle, query);
 
 	return 1;
 }
 
 stock SaveUserMoney (playerid) {
-	if (!PlayerInfo[playerid][loggedIn]) return 1;
-
 	new query[256];
 	mysql_format(handle, query, sizeof(query), "UPDATE accounts SET money = '%d' WHERE id = '%d'",
 		PlayerInfo[playerid][money], PlayerInfo[playerid][id]);
@@ -363,26 +387,39 @@ public LoadPickUps () {
 	}
 	return 1;
 }
-/*
-forward LoadObjects ();
-public LoadObjects () {
+
+forward LoadCheckpoints ();
+public LoadCheckpoints () {
 	new rows;
 	cache_get_row_count(rows);
 
 	for (new i = 0; i < rows; i++) {
-		cache_get_value_name_int(i, "id", Objects[i][id]);
-		cache_get_value_name_int(i, "model", Objects[i][model]);
-		cache_get_value_name_float(i, "pos_x", Objects[i][pos_x]);
-		cache_get_value_name_float(i, "pos_y", Objects[i][pos_y]);
-		cache_get_value_name_float(i, "pos_z", Objects[i][pos_z]);
-		cache_get_value_name_float(i, "rot_x", Objects[i][rot_x]);
-		cache_get_value_name_float(i, "rot_y", Objects[i][rot_y]);
-		cache_get_value_name_float(i, "rot_z", Objects[i][rot_z]);
-		cache_get_value_name_int(i, "draw_distance", Objects[i][draw_distance]);
-		cache_get_value_name(i, "description", Objects[i][description],256);
+		cache_get_value_name_int(i, "id", CheckPoints[i][id]);
+		cache_get_value_name_int(i, "size", CheckPoints[i][size]);
+		cache_get_value_name_float(i, "pos_x", CheckPoints[i][pos_x]);
+		cache_get_value_name_float(i, "pos_y", CheckPoints[i][pos_y]);
+		cache_get_value_name_float(i, "pos_z", CheckPoints[i][pos_z]);
+		cache_get_value_name(i, "description", CheckPoints[i][description],256);
+		cache_get_value_name_int(i, "company", CheckPoints[i][company]);
+		cache_get_value_name_int(i, "usuage", CheckPoints[i][usuage]);
 
-		Objects[i][internal] = CreateObject(Objects[i][model],Objects[i][pos_x],Objects[i][pos_y],Objects[i][pos_z],Objects[i][rot_x],Objects[i][rot_y],Objects[i][rot_z],Objects[i][draw_distance]);
+		//PickUps[i][internal] = CreatePickup(PickUps[i][model],PickUps[i][type],PickUps[i][pos_x],PickUps[i][pos_y],PickUps[i][pos_z],PickUps[i][world]);
 	}
+	return 1;
+}
+
+forward OnUserLoadJob (playerid);
+public OnUserLoadJob (playerid) {
+	if (cache_num_rows() != 1) {
+		// User not found
+	} else {
+		cache_get_value_name_int(0, "id", PlayerInfo[playerid][id]);
+		cache_get_value_name_int(0, "skin", PlayerInfo[playerid][skin]);
+		cache_get_value_name_int(0, "job", PlayerInfo[playerid][company]);
+		cache_get_value_name_int(0, "job_score", PlayerInfo[playerid][score]);
+		cache_get_value_name_int(0, "job_timer", PlayerInfo[playerid][nextScore]);
+	}
+
 	return 1;
 }
 
@@ -409,9 +446,18 @@ public LoadVehicles () {
 		SetVehicleNumberPlate(Vehicles[i][internal], Vehicles[i][numberplate]);
 	}
 	return 1;
-} */
+}
 
+forward ScoreTimer (playerid);
+public ScoreTimer (playerid) {
+	PlayerInfo[playerid][nextScore] += 1;
 
+	if (PlayerInfo[playerid][nextScore] >= 60) {
+		PlayerInfo[playerid][score] += 1;
+		PlayerInfo[playerid][nextScore] = 0;
+	}
+	SaveAllUserStats(playerid);
+}
 //////////////////////////////
 // LOGIN & MYSQL-CONNECTION //
 //////////////////////////////

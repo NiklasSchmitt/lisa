@@ -37,7 +37,7 @@ new handle; //MySQL-Handle
 enum player {
 	id,
 	bool:loggedIn,
-	name[MAX_PLAYER_NAME],
+	name[MAX_PLAYER_NAME+1],
 	level,
 	skin,
 	Float:health,
@@ -143,7 +143,7 @@ public OnGameModeInit () {
 
 	mysql_pquery(handle, "SELECT * FROM pickups ORDER BY id ASC", "LoadPickUps");
 	mysql_pquery(handle, "SELECT * FROM objects ORDER BY id ASC", "LoadObjects");
-	mysql_pquery(handle, "SELECT * FROM vehicles ORDER BY id ASC", "LoadVehicles");
+	mysql_pquery(handle, "SELECT * FROM vehicles WHERE company = 0 ORDER BY id ASC", "LoadVehicles");
 
 	return 1;
 }
@@ -594,7 +594,7 @@ public OnDialogResponse (playerid, dialogid, response, listitem, inputtext[]) {
 	}
 
 	if (dialogid == DIALOG_MM_ADMIN && response == 1) {
-	    return SetPlayerPos(playerid,CheckPoints[0][pos_x],CheckPoints[0][pos_y],CheckPoints[0][pos_z]);
+		return SetPlayerPos(playerid,CheckPoints[0][pos_x],CheckPoints[0][pos_y],CheckPoints[0][pos_z]);
 	}
 
 	if ( (dialogid == DIALOG_MM_PROFIL || dialogid == DIALOG_MM_SERVICE || dialogid == DIALOG_MM_NAVIGATION) && response == 0) {

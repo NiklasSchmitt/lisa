@@ -57,7 +57,7 @@ enum player {
 	textDraw,
 	bool:showTextDraw,
 	bool:afk,
-	bool:isInJob,
+	bool:inJob,
 	company
 }
 
@@ -429,6 +429,11 @@ public OnPlayerEnterCheckpoint (playerid) {
 }
 
 public OnPlayerLeaveCheckpoint (playerid) {
+	if (PlayerInfo[playerid][inJob] == true) {
+		new update;
+		update = GetPlayerMoney(playerid);
+		PlayerInfo[playerid][money] = update;
+	}
 	return 1;
 }
 
@@ -438,6 +443,7 @@ public OnPlayerEnterRaceCheckpoint (playerid) {
 
 public OnPlayerLeaveRaceCheckpoint (playerid) {
 	return 1;
+
 }
 
 public OnRconCommand (cmd[]) {
@@ -468,6 +474,13 @@ public OnPlayerPickUpPickup (playerid, pickupid) {
 				PlayerTextDrawSetString(playerid, PlayerInfo[playerid][textDraw], string);
 				PlayerTextDrawShow(playerid, PlayerInfo[playerid][textDraw]);
 				SetTimerEx("HideTextDraw", 3000, false, "i", playerid);
+			}
+			if (PickUps[i][model] == 1275 && PickUps[i][company] != 0) {
+				if (PlayerInfo[playerid][inJob] == false) {
+					PlayerInfo[playerid][inJob] = true;
+				} else {
+					PlayerInfo[playerid][inJob] = false;
+				}
 			}
 		}
 	}
@@ -1011,6 +1024,8 @@ public OnUserLogin (playerid) {
 
 		PlayerInfo[playerid][loggedIn] = true;
 		PlayerInfo[playerid][timerScore] = SetTimer ("ScoreTimer", 60000, true);
+
+		PlayerInfo[playerid][inJob] = false;
 
 		SpawnPlayer(playerid);
 	}

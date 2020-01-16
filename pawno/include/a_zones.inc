@@ -405,6 +405,20 @@ static const gSAZones[][SAZONE_MAIN] = {  // Majority of names and area coordina
 
 //---------------------------------------------------------------------------------------------------
 
+stock GetPosZone(Float:x, Float:y, Float:z, zone[], len) //Credits to Niklas Schmitt
+{
+	//new Float:x, Float:y, Float:z;
+	//GetPlayerPos(playerid, x, y, z);
+ 	for(new i = 0; i != sizeof(gSAZones); i++ )
+ 	{
+		if(x >= gSAZones[i][SAZONE_AREA][0] && x <= gSAZones[i][SAZONE_AREA][3] && y >= gSAZones[i][SAZONE_AREA][1] && y <= gSAZones[i][SAZONE_AREA][4])
+		{
+		    return format(zone, len, gSAZones[i][SAZONE_NAME], 0);
+		}
+	}
+	return 0;
+}
+
 /* GetPlayer2DZone(playerid, zone[], len)
  * @Info:   Used to retrieve the players zone/area name. DOES NOT COMPARE HEIGHTS!
  *
